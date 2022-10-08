@@ -1,16 +1,19 @@
-from flask import jsonify, request
+from flask import jsonify
 from webargs.flaskparser import use_args
-from book_library_app import app, db
+from book_library_app import db
+from book_library_app.authors import authors_bp
 from book_library_app.models import Author, AuthorSchema, author_schema
-from book_library_app.utils import validate_json_content_type
+from book_library_app.utils import validate_json_content_type, get_schema_args, apply_order, apply_filter, get_pagination, \
+    token_required
 
-@app.route('/api/v1/authors', methods=['GET'])
+
+@authors_bp.route('/authors', methods=['GET'])
 def get_authors():
     query = Author.query
-    schema_args = Author.get_schema_args(request.args.get('fields'))
-    query = Author.apply_order(query, request.args.get('sort'))
-    query = Author.apply_filter(query)
-    items, pagination = Author.get_pagination(query)
+    schema_args = get_schema_args(Author)
+    query = apply_order(Author, query)
+    query = apply_filter(Author, query)
+    items, pagination = get_pagination(query, 'authors.get_authors')
 
     authors = AuthorSchema(**schema_args).dump(items)
 
@@ -22,7 +25,7 @@ def get_authors():
     })
 
 
-@app.route('/api/v1/authors/<int:author_id>', methods=['GET'])
+@authors_bp.route('/authors/<int:author_id>', methods=['GET'])
 def get_author(author_id: int):
     author = Author.query.get_or_404(author_id, description=f'Author with id {author_id} not found')
     return jsonify({
@@ -31,10 +34,12 @@ def get_author(author_id: int):
     })
 
 
-@app.route('/api/v1/authors', methods=['POST'])
+@authors_bp.route('/authors', methods=['POST'])
+@token_required
 @validate_json_content_type
 @use_args(author_schema, error_status_code=400)
-def create_author(args: dict):
+def create_author(user_id: int, args: dict):
+    print(f'user_id in CreateAuthor-> {user_id}')
     author = Author(**args)
     db.session.add(author)
     db.session.commit()
@@ -45,10 +50,12 @@ def create_author(args: dict):
     }), 201
 
 
-@app.route('/api/v1/authors/<int:author_id>', methods=['PUT'])
+@authors_bp.route('/authors/<int:author_id>', methods=['PUT'])
+@token_required
 @validate_json_content_type
 @use_args(author_schema, error_status_code=400)
-def update_author(args: dict, author_id: int):
+def update_author(user_id: int, args: dict, author_id: int):
+    print(f'user_id in UpdateAuthor -> {user_id}')
     author = Author.query.get_or_404(author_id, description=f'Author with id {author_id} not found')
 
     author.first_name = args['first_name']
@@ -63,8 +70,10 @@ def update_author(args: dict, author_id: int):
     })
 
 
-@app.route('/api/v1/authors/<int:author_id>', methods=['DELETE'])
-def delete_author(author_id: int):
+@authors_bp.route('/authors/<int:author_id>', methods=['DELETE'])
+@token_required
+def delete_author(user_id: int, author_id: int):
+    print(f'user_id in DeleteAuthor -> {user_id}')
     author = Author.query.get_or_404(author_id, description=f'Author with id {author_id} not found')
 
     db.session.delete(author)
@@ -74,4 +83,3 @@ def delete_author(author_id: int):
         'success': True,
         'data': f'Author with id {author_id} has been deleted'
     })
-
