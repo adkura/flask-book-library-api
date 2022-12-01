@@ -14,7 +14,7 @@ COMPARISION_OPERATORS_RE = re.compile(r'(.*)\[(gte|gt|lte|lt)\]')
 def validate_json_content_type(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        data = request.get_json()
+        data = request.get_json(silent=True)
         if data is None:
             raise UnsupportedMediaType('Content type must be application/json')
         return func(*args, **kwargs)

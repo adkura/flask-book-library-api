@@ -22,7 +22,7 @@ class DevelopmentConfig(Config):
 
 class TestingConfig(Config):
     DB_FILE_PATH = base_dir / 'tests' / 'test.db'
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///{}'
+    SQLALCHEMY_DATABASE_URI = f'sqlite:///{DB_FILE_PATH}'
     DEBUG = True
     TESTING = True
 
