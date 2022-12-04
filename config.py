@@ -19,7 +19,6 @@ class Config:
 class DevelopmentConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI')
 
-
 class TestingConfig(Config):
     DB_FILE_PATH = base_dir / 'tests' / 'test.db'
     SQLALCHEMY_DATABASE_URI = f'sqlite:///{DB_FILE_PATH}'
